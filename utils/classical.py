@@ -11,8 +11,7 @@ class Classical():
 
     def entails(self, pair):
         w1, w2, d = pair
-        w1_encodings = get_concept_encodings(w1, self.model_path)
-        w2_encodings = get_concept_encodings(w2, self.model_path)
+        w1_encodings, w2_encodings = get_exclusive_encodings([w1, w2], self.model_path)
         if self.dbscan:
             w1_encodings = dbscan_filter(w1_encodings)
             w2_encodings = dbscan_filter(w2_encodings)
@@ -64,8 +63,9 @@ if __name__ == '__main__':
     parser.add_argument('-m', '--model_path', type=str, default='model/vae2')
     parser.add_argument('--dbscan', action='store_true')
     parser.add_argument('--save_path', type=str, default='results/CLASSICAL.txt')
+    parser.add_argument('--entailment', action='store_true')
     args = parser.parse_args()
 
     c = Classical(args.model_path, args.dbscan)
-    c.entailment(args.save_path)
-    c.numerical_eval(args.save_path)
+    if args.entailment:
+        c.entailment(args.save_path)

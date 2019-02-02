@@ -5,6 +5,7 @@ import numpy as np
 import sys
 from wordnet_utils import *
 import random
+from collections import defaultdict
 
 with open('train_indices.p', 'rb') as f:
     train_indices = pickle.load(f)
@@ -64,6 +65,30 @@ def get_concept_encodings(concept, model_path, stacked=True):
         return np.concatenate(list(encodings.values()))
     else:
         return encodings
+
+def get_exclusive_encodings(concepts, model_path, stacked=True):
+    encodings_dict = {}
+    for concept in concepts:
+        encodings_dict[concept] = get_concept_encodings(concept, model_path, stacked=False)
+    labels_dict = defaultdict(list)
+    for concept in concepts:
+        for label in encodings_dict[concept].keys():
+            labels_dict[label].append(concept)
+    for label in labels_dict.keys():
+        c = labels_dict[label]
+        k = len(c)
+        if k <= 1:
+            continue
+        encodings = encodings_dict[c[0]][label]
+        encodings = np.array_split(encodings, k)
+        i = 0
+        for c in c:
+            encodings_dict[concept][label] = encodings[i]
+            i += 1
+    if stacked:
+        return [np.concatenate(list(encodings_dict[concept].values())) for concept in concepts]
+    else:
+        return [encodings_dict[concept] for concept in concepts]
 
 def get_random(n, k):
     data = np.zeros((n, k))
