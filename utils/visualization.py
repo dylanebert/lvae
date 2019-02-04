@@ -1,7 +1,6 @@
 import os
 from wordnet_utils import *
 from imagenet_utils import *
-from wbless_bridge import WBless
 from dbscan import *
 from scipy.spatial import ConvexHull
 from scipy.stats import gaussian_kde, multivariate_normal
@@ -16,7 +15,6 @@ import argparse
 class Visualization():
     def __init__(self, model_path):
         self.model_path = model_path
-        self.wbless = WBless()
 
     def scatter(self, labels, dbscan=False):
         palette = sns.color_palette('muted', n_colors=len(labels))
@@ -141,7 +139,7 @@ class Visualization():
         plt.plot(taus, precisions, label='precision')
         plt.plot(taus, recalls, label='recall')
         #plt.xlim([0, 1])
-        plt.ylim([0, 1])
+        plt.ylim([.7, 1])
         plt.xlabel(r'$\tau$')
         plt.ylabel('precision/recall')
         plt.title(title)
