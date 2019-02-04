@@ -1,9 +1,11 @@
 import os
 from wordnet_utils import *
 from imagenet_utils import *
+from wbless_bridge import WBless
 from dbscan import *
 from scipy.spatial import ConvexHull
 from scipy.stats import gaussian_kde, multivariate_normal
+from sklearn.metrics import precision_recall_curve
 from matplotlib import pyplot as plt
 import seaborn as sns
 import pandas as pd
@@ -15,6 +17,7 @@ import argparse
 class Visualization():
     def __init__(self, model_path):
         self.model_path = model_path
+        self.wbless = WBless()
 
     def scatter(self, labels, dbscan=False):
         palette = sns.color_palette('muted', n_colors=len(labels))
@@ -86,7 +89,34 @@ class Visualization():
         plt.title('Parametric Gaussian for {0}'.format(get_word_from_label(label)))
         plt.show()
 
-    def prec_recall(self, path, endpoint=False, title=''):
+    def prec_recall(self):
+        precision_dict = defaultdict(list)
+        recall_dict = defaultdict(list)
+        paths = ['results/CLASSICAL.txt', 'results/PROTOTYPE.txt', 'results/PROTOTYPE_KDE.txt']
+        methods = ['Classical', 'Prototype (parametric)', 'Prototype (non-parametric)']
+        taus = np.linspace(.01, 1, num=100, endpoint=True)
+        for method, path in zip(methods, paths):
+            with open(path) as f:
+                true = []
+                predicted = []
+                for line in f:
+                    w1, w2, t, p = line.rstrip().split('\t')
+                    true.append(int(t))
+                    predicted.append(float(p))
+                precision, recall, thresholds = precision_recall_curve(true, predicted)
+                precision_dict[method] = precision
+                recall_dict[method] = recall
+        for method in methods:
+            precision = precision_dict[method]
+            recall = recall_dict[method]
+            plt.plot(recall, precision, label=method)
+        plt.ylim([.6, 1])
+        plt.xlabel('recall')
+        plt.ylabel('precision')
+        plt.legend()
+        plt.show()
+
+    '''def prec_recall(self, path, endpoint=False, title=''):
         true_positives = defaultdict(int)
         false_positives = defaultdict(int)
         false_negatives = defaultdict(int)
@@ -139,20 +169,19 @@ class Visualization():
         plt.plot(taus, precisions, label='precision')
         plt.plot(taus, recalls, label='recall')
         #plt.xlim([0, 1])
-        plt.ylim([.7, 1])
+        plt.ylim([0, 1])
         plt.xlabel(r'$\tau$')
         plt.ylabel('precision/recall')
         plt.title(title)
         plt.legend()
-        plt.show()
+        plt.show()'''
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', '--model_path', type=str, default='model/vae2')
     parser.add_argument('--dbscan', action='store_true')
-    parser.add_argument('--save_path', type=str, default='results/PROTOTYPE.txt')
     parser.add_argument('--word', type=str, default='bird_of_prey')
-    parser.add_argument('--prec_recall', type=str, default='')
+    parser.add_argument('--prec_recall', action='store_true')
     parser.add_argument('--endpoint', action='store_true')
     parser.add_argument('--kde', action='store_true')
     parser.add_argument('--gaussian', action='store_true')
@@ -160,8 +189,8 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     vis = Visualization(args.model_path)
-    if not args.prec_recall == '':
-        vis.prec_recall(args.save_path, endpoint=args.endpoint, title=args.prec_recall)
+    if args.prec_recall:
+        vis.prec_recall()
     if args.kde:
         vis.kde(get_label_from_word(args.word), dbscan=args.dbscan)
     if args.gaussian:
