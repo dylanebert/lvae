@@ -1,0 +1,10 @@
+Entailment results (wbless)
+---------------------------
+CLASSICAL.txt, CLASSICAL_DBSCAN.txt, PROTOTYPE.txt, PROTOTYPE_DBSCAN.txt contain lexical entailment results of the following format:
+
+concept_1	concept_2	t	p
+
+Where "t" is the true entailment value (either 0 or 1 in wbless) and "p" is the predicted entailment value (continuous from 0 to 1)
+With classical methods, "p" is the proportion instances of concept_1 that are in the convex hull of concept_2
+With prototype methods, "p" is the pdf of the prototype of concept_1 with respect to the density function of concept_2
+

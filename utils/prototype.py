@@ -1,9 +1,11 @@
 from wbless_bridge import WBless
+from hyperlex_bridge import Hyperlex
 import argparse
 from dbscan import *
 from imagenet_utils import *
 from scipy.stats import gaussian_kde, multivariate_normal
 import random
+from tqdm import tqdm
 
 class Prototype():
     def __init__(self, model_path, dbscan=False):
@@ -37,21 +39,18 @@ class Prototype():
         if method == 'kde':
             w1_kde, w1_prototype = self.get_kde(w1_encodings)
             w2_kde, w2_prototype = self.get_kde(w2_encodings)
-            print(w1_kde(w2_prototype) / w1_kde(w1_prototype))
             return w2_kde(w1_prototype)[0] / w2_kde(w2_prototype)[0]
         else:
             w1_kde, w1_prototype = self.get_gaussian(w1_encodings)
             w2_kde, w2_prototype = self.get_gaussian(w2_encodings)
-            print(w1_kde.pdf(w2_prototype) / w1_kde.pdf(w1_prototype))
             return w2_kde.pdf(w1_prototype) / w2_kde.pdf(w2_prototype)
 
     def entailment(self, save_path, method='kde'):
-        wbless = WBless()
+        dset = Hyperlex()#WBless()
         with open(save_path, 'w+') as f:
-            for pair in wbless.pairs:
+            for pair in tqdm(dset.pairs, total=len(dset.pairs)):
                 entails = self.entails(pair, method)
                 line = '{0}\t{1}\t{2}\t{3}'.format(get_word_from_label(pair[0]), get_word_from_label(pair[1]), pair[2], str(entails))
-                print(line)
                 f.write('{0}\n'.format(line))
 
 if __name__ == '__main__':

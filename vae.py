@@ -88,12 +88,18 @@ class VAE():
         with open(os.path.join(self.model_path, 'history.p'), 'wb+') as o:
             pickle.dump(history.history, o)
 
-    def encode(self):
+    def encode(self, test=False):
         if not self.load_weights():
             return
-        data = HDF5Matrix('train.hdf5', 'embeddings')
+        if test:
+            dpath = 'test.hdf5'
+            spath = os.path.join(self.model_path, 'test_encodings.hdf5')
+        else:
+            dpath = 'train.hdf5'
+            spath = os.path.join(self.model_path, 'encodings.hdf5')
+        data = HDF5Matrix(dpath, 'embeddings')
         z = self.encoder.predict(data, batch_size=64, verbose=1)
-        with h5py.File(os.path.join(self.model_path, 'encodings.hdf5'), 'w') as f:
+        with h5py.File(spath, 'w') as f:
             f.create_dataset('encodings', data=z)
 
 if __name__ == '__main__':
@@ -101,6 +107,7 @@ if __name__ == '__main__':
     parser.add_argument('-m', '--model_path', help='model directory path', type=str, required=True)
     parser.add_argument('--train', action='store_true')
     parser.add_argument('--encode', action='store_true')
+    parser.add_argument('--test', action='store_true')
     parser.add_argument('--latent_size', help='override latent size', type=int, default=2)
     args = parser.parse_args()
 
@@ -108,4 +115,4 @@ if __name__ == '__main__':
     if args.train:
         model.train()
     if args.encode:
-        model.encode()
+        model.encode(args.test)

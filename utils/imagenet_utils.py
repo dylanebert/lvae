@@ -7,10 +7,12 @@ from wordnet_utils import *
 import random
 from collections import defaultdict
 
-with open('train_indices.p', 'rb') as f:
+with open('/home/dylan/Documents/lvae/train_indices.p', 'rb') as f:
     train_indices = pickle.load(f)
-with open('dev_indices.p', 'rb') as f:
+with open('/home/dylan/Documents/lvae/dev_indices.p', 'rb') as f:
     dev_indices = pickle.load(f)
+with open('/home/dylan/Documents/lvae/test_indices.p', 'rb') as f:
+    test_indices = pickle.load(f)
 
 def get_leaves(label):
     leaves = []
@@ -104,3 +106,21 @@ def get_random(n, k):
                 data[i] = f['embeddings'][idx]
                 i += 1
     return data
+
+def get_test_encodings(concept, model_path):
+    labels = get_leaves(concept)
+    encodings = []
+    with h5py.File(os.path.join(model_path, 'test_encodings.hdf5')) as f:
+        set = np.arange(f['encodings'].shape[0])
+        ex = []
+        for label in labels:
+            i, k = test_indices[label]
+            encodings.append(list(f['encodings'][i:i+k]))
+            ex.append(list(np.arange(i, i+k, dtype=int)))
+        encodings = np.reshape(np.array(encodings), (-1, 2))
+        ex = np.reshape(np.array(ex), (-1, 1))
+        diff = np.setdiff1d(set, ex)
+        sample_indices = sorted(random.sample(list(diff), encodings.shape[0]))
+        enc = np.array(f['encodings'])
+        false_encodings = enc[sample_indices]
+        return encodings, false_encodings
