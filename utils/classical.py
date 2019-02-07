@@ -26,8 +26,11 @@ class Classical():
             n += 1
         return float(n_entails) / n
 
-    def entailment(self, save_path):
-        dset = Hyperlex()#WBless()
+    def entailment(self, eval_set, save_path):
+        if eval_set == 'wbless':
+            dset = WBless()
+        else:
+            dset = Hyperlex()
         with open(save_path, 'w+') as f:
             for pair in tqdm(dset.pairs, total=len(dset.pairs)):
                 entails = self.entails(pair)
@@ -38,10 +41,9 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', '--model_path', type=str, default='model/vae2')
     parser.add_argument('--dbscan', action='store_true')
+    parser.add_argument('--eval_set', type=str, default='wbless')
     parser.add_argument('--save_path', type=str, default='results/CLASSICAL.txt')
-    parser.add_argument('--entailment', action='store_true')
     args = parser.parse_args()
 
     c = Classical(args.model_path, args.dbscan)
-    if args.entailment:
-        c.entailment(args.save_path)
+    c.entailment(args.eval_set, args.save_path)

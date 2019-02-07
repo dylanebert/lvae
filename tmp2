@@ -1,0 +1,4 @@
+#!/bin/bash
+sh tmp 4
+sh tmp 8
+sh tmp 16

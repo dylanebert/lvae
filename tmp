@@ -1,3 +1,8 @@
 #!/bin/bash
-python utils/prototype.py --save_path results/hyperlex/PROTOTYPE_KDE.txt --entailment --method kde
-python utils/prototype.py --save_path results/hyperlex/PROTOTYPE_KDE_DBSCAN.txt --entailment --dbscan --method kde
+python utils/classical.py -m model/vae$1 --eval_set wbless --save_path results/$1/wbless/CLASSICAL.txt
+python utils/classical.py -m model/vae$1 --eval_set hyperlex --save_path results/$1/hyperlex/CLASSICAL.txt
+python utils/prototype.py -m model/vae$1 --eval_set wbless --save_path results/$1/wbless/PROTOTYPE.txt
+python utils/prototype.py -m model/vae$1 --eval_set hyperlex --save_path results/$1/hyperlex/PROTOTYPE.txt
+python utils/categorization.py -m model/vae$1 --classical --save_path results/$1/categorization/CLASSICAL.txt
+python utils/categorization.py -m model/vae$1 --prototype --save_path results/$1/categorization/PROTOTYPE.txt
+

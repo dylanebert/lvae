@@ -117,7 +117,7 @@ def get_test_encodings(concept, model_path):
             i, k = test_indices[label]
             encodings.append(list(f['encodings'][i:i+k]))
             ex.append(list(np.arange(i, i+k, dtype=int)))
-        encodings = np.reshape(np.array(encodings), (-1, 2))
+        encodings = np.reshape(np.array(encodings), (-1, f['encodings'].shape[1]))
         ex = np.reshape(np.array(ex), (-1, 1))
         diff = np.setdiff1d(set, ex)
         sample_indices = sorted(random.sample(list(diff), encodings.shape[0]))
