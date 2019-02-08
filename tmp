@@ -1,3 +1,0 @@
-#!/bin/bash
-python utils/tsne_reduce.py model/vae$1/encodings.hdf5 model/vae$1/encodings_2d.hdf5
-
