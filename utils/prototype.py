@@ -32,7 +32,7 @@ class Prototype():
 
     def entails(self, pair, method):
         w1, w2, d = pair
-        w1_encodings, w2_encodings = get_exclusive_encodings([w1, w2], self.model_path)
+        w1_encodings, w2_encodings = get_exclusive_encodings([w1, w2], os.path.join(self.model_path, 'encodings.hdf5'))
         if self.dbscan:
             w1_encodings = dbscan_filter(w1_encodings)
             w2_encodings = dbscan_filter(w2_encodings)
@@ -45,7 +45,7 @@ class Prototype():
             w2_kde, w2_prototype = self.get_gaussian(w2_encodings)
             return w2_kde.pdf(w1_prototype) / w2_kde.pdf(w2_prototype)
 
-    def entailment(self, eval_set, save_path, method='kde'):
+    def entailment(self, eval_set, save_path, method):
         if eval_set == 'wbless':
             dset = WBless()
         else:
@@ -58,12 +58,34 @@ class Prototype():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-m', '--model_path', type=str, default='model/vae2')
+    parser.add_argument('--latent_size', type=int, default=2)
     parser.add_argument('--dbscan', action='store_true')
-    parser.add_argument('--eval_set', type=str, default='wbless')
-    parser.add_argument('--save_path', type=str, default='results/PROTOTYPE.txt')
-    parser.add_argument('--method', type=str, default='gaussian')
+    parser.add_argument('--eval_set', help='override for only wbless or hyperlex', type=str, default='')
+    parser.add_argument('--kde', action='store_true')
     args = parser.parse_args()
 
+    args.model_path = 'model/vae' + str(args.latent_size)
+    args.save_dir = 'results/' + str(args.latent_size)
+
     model = Prototype(args.model_path, args.dbscan)
-    model.entailment(args.eval_set, args.save_path, method=args.method)
+    if args.dbscan:
+        if args.kde:
+            filename = 'PROTOTYPE_KDE_DBSCAN.txt'
+        else:
+            filename = 'PROTOTYPE_DBSCAN.txt'
+    else:
+        if args.kde:
+            filename = 'PROTOTYPE_KDE.txt'
+        else:
+            filename = 'PROTOTYPE.txt'
+    if args.kde:
+        method = 'kde'
+    else:
+        method = 'gaussian'
+    if args.eval_set == 'wbless':
+        model.entailment('wbless', os.path.join(args.save_dir, 'wbless', filename), method)
+    elif args.eval_set == 'hyperlex':
+        model.entailment('hyperlex', os.path.join(args.save_dir, 'hyperlex', filename), method)
+    else:
+        model.entailment('wbless', os.path.join(args.save_dir, 'wbless', filename), method)
+        model.entailment('hyperlex', os.path.join(args.save_dir, 'hyperlex', filename), method)

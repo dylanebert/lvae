@@ -1,8 +1,3 @@
 #!/bin/bash
-python utils/classical.py -m model/vae$1 --eval_set wbless --save_path results/$1/wbless/CLASSICAL.txt
-python utils/classical.py -m model/vae$1 --eval_set hyperlex --save_path results/$1/hyperlex/CLASSICAL.txt
-python utils/prototype.py -m model/vae$1 --eval_set wbless --save_path results/$1/wbless/PROTOTYPE.txt
-python utils/prototype.py -m model/vae$1 --eval_set hyperlex --save_path results/$1/hyperlex/PROTOTYPE.txt
-python utils/categorization.py -m model/vae$1 --classical --save_path results/$1/categorization/CLASSICAL.txt
-python utils/categorization.py -m model/vae$1 --prototype --save_path results/$1/categorization/PROTOTYPE.txt
+python utils/tsne_reduce.py model/vae$1/encodings.hdf5 model/vae$1/encodings_2d.hdf5
 

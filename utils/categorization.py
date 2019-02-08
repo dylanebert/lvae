@@ -38,7 +38,7 @@ class Categorization():
         y_true_all = []
         y_pred_all = []
         for label in tqdm(train_indices.keys(), total=len(list(train_indices.keys()))):
-            train = get_concept_encodings(label, self.model_path)
+            train = get_concept_encodings(label, os.path.join(self.model_path, 'encodings.hdf5'))
             if dbscan:
                 train = dbscan_filter(train)
             x_true, x_false = get_test_encodings(label, self.model_path)
@@ -59,18 +59,30 @@ class Categorization():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-m', '--model_path', type=str, default='model/vae2')
+    parser.add_argument('--latent_size', type=int, default=2)
     parser.add_argument('--dbscan', action='store_true')
-    parser.add_argument('--classical', action='store_true')
-    parser.add_argument('--prototype', action='store_true')
-    parser.add_argument('--kde', action='store_true')
-    parser.add_argument('--save_path', type=str, default='results/categorization/CLASSICAL.txt')
+    parser.add_argument('--method', help='override method to only classical, prototype, kde (default classical and prototype)', type=str, default='')
     args = parser.parse_args()
 
-    cat = Categorization(args.model_path)
-    if args.classical:
-        cat.eval('classical', args.save_path, args.dbscan)
-    if args.prototype:
-        cat.eval('prototype', args.save_path, args.dbscan)
-    if args.kde:
-        cat.eval('kde', args.save_path, args.dbscan)
+    args.model_path = 'model/vae' + str(args.latent_size)
+    args.save_dir = 'results/' + str(args.latent_size)
+
+    model = Categorization(args.model_path)
+    if args.method == 'classical' or args.method == '':
+        if args.dbscan:
+            filename = 'CLASSICAL_DBSCAN.txt'
+        else:
+            filename = 'CLASSICAL.txt'
+        model.eval('classical', os.path.join(args.save_dir, 'categorization', filename), args.dbscan)
+    if args.method == 'prototype' or args.method == '':
+        if args.dbscan:
+            filename = 'PROTOTYPE_DBSCAN.txt'
+        else:
+            filename = 'PROTOTYPE.txt'
+        model.eval('prototype', os.path.join(args.save_dir, 'categorization', filename), args.dbscan)
+    if args.method == 'kde':
+        if args.dbscan:
+            filename = 'PROTOTYPE_KDE_DBSCAN.txt'
+        else:
+            filename = 'PROTOTYPE_KDE.txt'
+        model.eval('kde', os.path.join(args.save_dir, 'categorization', filename), args.dbscan)

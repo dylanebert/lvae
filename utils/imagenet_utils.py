@@ -56,10 +56,10 @@ def get_concept_embeddings(concept):
             idx += n
     return train, dev, train_labels, dev_labels
 
-def get_concept_encodings(concept, model_path, stacked=True):
+def get_concept_encodings(concept, path, stacked=True):
     leaves = get_leaves(concept)
     encodings = {}
-    with h5py.File(os.path.join(model_path, 'encodings.hdf5')) as f:
+    with h5py.File(path) as f:
         for concept in leaves:
             i, k = train_indices[concept]
             encodings[concept] = f['encodings'][i:i+k]
@@ -68,29 +68,18 @@ def get_concept_encodings(concept, model_path, stacked=True):
     else:
         return encodings
 
-def get_exclusive_encodings(concepts, model_path, stacked=True):
-    encodings_dict = {}
+def get_exclusive_encodings(concepts, path):
+    leaf_concepts = defaultdict(list)
     for concept in concepts:
-        encodings_dict[concept] = get_concept_encodings(concept, model_path, stacked=False)
-    labels_dict = defaultdict(list)
-    for concept in concepts:
-        for label in encodings_dict[concept].keys():
-            labels_dict[label].append(concept)
-    for label in labels_dict.keys():
-        c = labels_dict[label]
-        k = len(c)
-        if k <= 1:
-            continue
-        encodings = encodings_dict[c[0]][label]
-        encodings = np.array_split(encodings, k)
-        i = 0
-        for c in c:
-            encodings_dict[concept][label] = encodings[i]
-            i += 1
-    if stacked:
-        return [np.concatenate(list(encodings_dict[concept].values())) for concept in concepts]
-    else:
-        return [encodings_dict[concept] for concept in concepts]
+        for leaf in get_leaves(concept):
+            leaf_concepts[leaf].append(concept)
+    encodings = defaultdict(list)
+    for leaf, concepts_in_leaf in leaf_concepts.items():
+        enc = get_concept_encodings(leaf, path, stacked=True)
+        enc = np.array_split(enc, len(concepts_in_leaf))
+        for i, concept in enumerate(concepts_in_leaf):
+            encodings[concept].append(enc[i])
+    return [np.concatenate(encodings[concept]) for concept in concepts]
 
 def get_random(n, k):
     data = np.zeros((n, k))

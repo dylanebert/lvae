@@ -7,9 +7,6 @@ class Hyperlex():
             self.labels = f.read().splitlines()
         with open('/data/nlp/hyperlex/hyperlex_imagenet.p', 'rb') as f:
             self.pairs = pickle.load(f)
-        self.leaves = {}
-        for label in self.labels:
-            self.leaves[label] = get_leaves(label)
 
     def __str__(self):
         string = ''

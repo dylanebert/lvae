@@ -3,8 +3,9 @@ from hyperlex_bridge import Hyperlex
 import argparse
 from dbscan import *
 from imagenet_utils import *
-from scipy.spatial import ConvexHull, Delaunay
+from scipy.spatial import Delaunay
 from tqdm import tqdm
+import re
 
 class Classical():
     def __init__(self, model_path, dbscan=False):
@@ -13,13 +14,13 @@ class Classical():
 
     def entails(self, pair):
         w1, w2, d = pair
-        w1_encodings, w2_encodings = get_exclusive_encodings([w1, w2], self.model_path)
+        w1_encodings, w2_encodings = get_exclusive_encodings([w1, w2], os.path.join(self.model_path, 'encodings.hdf5'))
         if self.dbscan:
             w1_encodings = dbscan_filter(w1_encodings)
             w2_encodings = dbscan_filter(w2_encodings)
-        d = Delaunay(w2_encodings)
         n_entails = 0
         n = 0
+        d = Delaunay(w2_encodings)
         for enc in w1_encodings:
             if d.find_simplex(enc) >= 0:
                 n_entails += 1
@@ -39,11 +40,23 @@ class Classical():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-m', '--model_path', type=str, default='model/vae2')
+    parser.add_argument('--latent_size', type=int, default=2)
     parser.add_argument('--dbscan', action='store_true')
-    parser.add_argument('--eval_set', type=str, default='wbless')
-    parser.add_argument('--save_path', type=str, default='results/CLASSICAL.txt')
+    parser.add_argument('--eval_set', help='override for only wbless or hyperlex', type=str, default='')
     args = parser.parse_args()
 
-    c = Classical(args.model_path, args.dbscan)
-    c.entailment(args.eval_set, args.save_path)
+    args.model_path = 'model/vae' + str(args.latent_size)
+    args.save_dir = 'results/' + str(args.latent_size)
+
+    model = Classical(args.model_path, args.dbscan)
+    if args.dbscan:
+        filename = 'CLASSICAL_DBSCAN.txt'
+    else:
+        filename = 'CLASSICAL.txt'
+    if args.eval_set == 'wbless':
+        model.entailment('wbless', os.path.join(args.save_dir, 'wbless', filename))
+    elif args.eval_set == 'hyperlex':
+        model.entailment('hyperlex', os.path.join(args.save_dir, 'hyperlex', filename))
+    else:
+        model.entailment('wbless', os.path.join(args.save_dir, 'wbless', filename))
+        model.entailment('hyperlex', os.path.join(args.save_dir, 'hyperlex', filename))

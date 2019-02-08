@@ -1,8 +1,9 @@
 import numpy as np
 from sklearn.cluster import DBSCAN
+from sklearn.neighbors import NearestNeighbors
 import random
 
-def dbscan_filter(encodings, eps=.05, min_samples=25):
+def dbscan_filter(encodings, eps=.1, min_samples=25):
     if encodings.shape[0] > 100000:
         encodings = np.array(random.sample(list(encodings), 100000))
     db = DBSCAN(eps=eps, min_samples=min_samples).fit(encodings)
