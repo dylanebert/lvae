@@ -17,9 +17,13 @@ with open('/home/dylan/Documents/lvae/test_indices.p', 'rb') as f:
 def get_leaves(label):
     leaves = []
     labels = [label]
+    seen = []
     i = 0
     while i < len(labels):
         label = labels[i]
+        if label in seen:
+            continue
+        seen.append(label)
         if label in train_indices:
             leaves.append(label)
         else:
@@ -56,12 +60,25 @@ def get_concept_embeddings(concept):
             idx += n
     return train, dev, train_labels, dev_labels
 
-def get_concept_encodings(concept, path, stacked=True):
+def get_concept_encodings(concept, model_path, encodings_type, stacked=True, reduced=False):
     leaves = get_leaves(concept)
     encodings = {}
+    path = model_path + '/'
+    if encodings_type == 'train':
+        indices = train_indices
+    elif encodings_type == 'dev':
+        indices = dev_indices
+        path += 'dev_'
+    elif encodings_type == 'test':
+        indices = test_indices
+        path += 'test_'
+    path += 'encodings'
+    if reduced:
+        path += '_2d'
+    path += '.hdf5'
     with h5py.File(path) as f:
         for concept in leaves:
-            i, k = train_indices[concept]
+            i, k = indices[concept]
             encodings[concept] = f['encodings'][i:i+k]
     if stacked:
         return np.concatenate(list(encodings.values()))
@@ -96,10 +113,14 @@ def get_random(n, k):
                 i += 1
     return data
 
-def get_test_encodings(concept, model_path):
+def get_test_encodings(concept, model_path, reduced=False):
     labels = get_leaves(concept)
     encodings = []
-    with h5py.File(os.path.join(model_path, 'test_encodings.hdf5')) as f:
+    path = model_path + '/test_encodings'
+    if reduced:
+        path += '_2d'
+    path += '.hdf5'
+    with h5py.File(path) as f:
         set = np.arange(f['encodings'].shape[0])
         ex = []
         for label in labels:

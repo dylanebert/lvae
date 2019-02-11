@@ -1,0 +1,3 @@
+#!/bin/bash
+echo $1
+python utils/eval.py --latent_size $1 --method classical --dset categorization --reduced | column -t

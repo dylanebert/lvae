@@ -88,15 +88,20 @@ class VAE():
         with open(os.path.join(self.model_path, 'history.p'), 'wb+') as o:
             pickle.dump(history.history, o)
 
-    def encode(self, test=False):
+    def encode(self, encode):
         if not self.load_weights():
             return
-        if test:
+        if encode == 'train':
+            dpath = 'train.hdf5'
+            spath = os.path.join(self.model_path, 'encodings.hdf5')
+        elif encode == 'dev':
+            dpath = 'dev.hdf5'
+            spath = os.path.join(self.model_path, 'dev_encodings.hdf5')
+        elif encode == 'test':
             dpath = 'test.hdf5'
             spath = os.path.join(self.model_path, 'test_encodings.hdf5')
         else:
-            dpath = 'train.hdf5'
-            spath = os.path.join(self.model_path, 'encodings.hdf5')
+            sys.exit('Invalid encode type. Use train/dev/test')
         data = HDF5Matrix(dpath, 'embeddings')
         z = self.encoder.predict(data, batch_size=64, verbose=1)
         with h5py.File(spath, 'w') as f:
@@ -106,13 +111,12 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', '--model_path', help='model directory path', type=str, required=True)
     parser.add_argument('--train', action='store_true')
-    parser.add_argument('--encode', action='store_true')
-    parser.add_argument('--test', action='store_true')
+    parser.add_argument('--encode', help='encode train/dev/test', type=str, default='')
     parser.add_argument('--latent_size', help='override latent size', type=int, default=2)
     args = parser.parse_args()
 
     model = VAE(args.model_path, latent_size=args.latent_size)
     if args.train:
         model.train()
-    if args.encode:
-        model.encode(args.test)
+    if not args.encode == '':
+        model.encode(args.encode)
