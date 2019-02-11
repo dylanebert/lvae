@@ -52,6 +52,23 @@ def prototype(model_path, results_path, reduced):
             for enc in false_encodings:
                 f.write('{0}\t{1}\t{2}\n'.format(label, 0, normal.pdf(enc) / normalizer))
 
+def kde(model_path, results_path, reduced):
+    kdes_path = model_path + '/kdes_train'
+    if reduced:
+        kdes_path += '_2d'
+    kdes_path += '.p'
+    with open(kdes_path, 'rb') as f:
+        kdes = pickle.load(f)
+    with open(results_path, 'w+') as f:
+        for label in tqdm(train_indices.keys(), total=len(train_indices)):
+            kde = kdes[label][0]
+            normalizer = kde(kdes[label][1])[0]
+            encodings, false_encodings = get_test_encodings(label, model_path, reduced=reduced)
+            for enc in encodings:
+                f.write('{0}\t{1}\t{2}\n'.format(label, 1, kde(enc)[0] / normalizer))
+            for enc in false_encodings:
+                f.write('{0}\t{1}\t{2}\n'.format(label, 0, kde(enc)[0] / normalizer))
+
 def categorization(latent_size, method, reduced):
     model_path = 'model/vae' + str(latent_size)
     results_path = 'results/' + str(latent_size) + '/categorization/' + method
@@ -62,6 +79,8 @@ def categorization(latent_size, method, reduced):
         classical(model_path, results_path, reduced)
     elif method == 'prototype':
         prototype(model_path, results_path, reduced)
+    elif method == 'kde':
+        kde(model_path, results_path, reduced)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

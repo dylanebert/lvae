@@ -85,14 +85,14 @@ def get_concept_encodings(concept, model_path, encodings_type, stacked=True, red
     else:
         return encodings
 
-def get_exclusive_encodings(concepts, path):
+def get_exclusive_encodings(concepts, model_path, reduced=False):
     leaf_concepts = defaultdict(list)
     for concept in concepts:
         for leaf in get_leaves(concept):
             leaf_concepts[leaf].append(concept)
     encodings = defaultdict(list)
     for leaf, concepts_in_leaf in leaf_concepts.items():
-        enc = get_concept_encodings(leaf, path, stacked=True)
+        enc = get_concept_encodings(leaf, model_path, 'train', reduced=reduced)
         enc = np.array_split(enc, len(concepts_in_leaf))
         for i, concept in enumerate(concepts_in_leaf):
             encodings[concept].append(enc[i])

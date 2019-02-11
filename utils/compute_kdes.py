@@ -6,6 +6,7 @@ from sklearn.cluster import MeanShift
 from imagenet_utils import *
 from dbscan import dbscan_filter
 from tqdm import tqdm
+import random
 
 def compute_kdes(model_path, labels, dbscan=False, reduced=False, enc_type='train'):
     kdes = {}
@@ -13,6 +14,8 @@ def compute_kdes(model_path, labels, dbscan=False, reduced=False, enc_type='trai
         encodings = get_concept_encodings(label, model_path, enc_type, reduced=reduced)
         if dbscan:
             encodings = dbscan_filter(encodings)
+        if encodings.shape[0] > 1000:
+            encodings = np.array(random.sample(list(encodings), 1000))
         kernel = gaussian_kde(encodings.T)
         ms = MeanShift().fit(encodings)
         cc = ms.cluster_centers_

@@ -47,6 +47,26 @@ def prototype(model_path, results_path, dset, enc_type, reduced):
             p = normal.pdf(prototype) / normal.pdf(normal.mean)
             f.write('{0}\n'.format('\t'.join([str(i) for i in [w1, w2, l1, l2, d, p]])))
 
+def kde(model_path, results_path, dset, enc_type, reduced):
+    kdes_path = model_path + '/kdes_train'
+    if reduced:
+        kdes_path += '_2d'
+    kdes_path += '.p'
+    with open(kdes_path, 'rb') as f:
+        kdes = pickle.load(f)
+    path = model_path + '/kdes_' + enc_type
+    if reduced:
+        path += '_2d'
+    path += '.p'
+    with open(path, 'rb') as f:
+        prototypes = pickle.load(f)
+    with open(results_path, 'w+') as f:
+        for (w1, w2, l1, l2, d) in tqdm(dset.pairs, total=len(dset.pairs)):
+            kde = kdes[l2]
+            prototype = prototypes[l1][1]
+            p = (kde[0](prototype) / kde[0](kde[1]))[0]
+            f.write('{0}\n'.format('\t'.join([str(i) for i in [w1, w2, l1, l2, d, p]])))
+
 def entailment(latent_size, enc_type, dset_name, method, reduced):
     model_path = 'model/vae' + str(latent_size)
     if dset_name == 'wbless':
@@ -61,6 +81,8 @@ def entailment(latent_size, enc_type, dset_name, method, reduced):
         classical(model_path, results_path, dset, enc_type, reduced)
     elif method == 'prototype':
         prototype(model_path, results_path, dset, enc_type, reduced)
+    elif method == 'kde':
+        kde(model_path, results_path, dset, enc_type, reduced)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()

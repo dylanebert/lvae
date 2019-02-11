@@ -23,7 +23,7 @@ def get_values(path, test_path):
     with open(test_path) as f:
         for line in f:
             w1, w2, l1, l2 , t, p = line.rstrip().split('\t')
-            vals[(w1, w2, l1, l2)] += [float(t), float(p)]
+            vals[(w1, w2, l1, l2)] += [float(p)]
     for v in vals.values():
         assert(len(v) == 3)
     return vals
