@@ -1,0 +1,16 @@
+Owls contains data for owls
+Other refers to data for non-owl birds of prey
+
+Txt files are of the format
+filename	dist	dist_dbscan	p2	p64
+
+Where dist is the distance to the classical owl boundary (negative distance is inside the boundary)
+Dist_dbscan is the distance to the dbscan owl boundary
+P2 is the prototypicality of the encoding against the owl normal
+P64 is the prototypicality of the 64-dim encoding against the 64-dim owl normal
+
+The json files are the same, but with set up with dictionaries
+
+Directory names of images are self-explanatory - boundary ones are all the ones on the boundary,
+while the other directories are the 10 closest to the inside/outside of each boundary
+

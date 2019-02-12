@@ -1,10 +1,13 @@
 from wordnet_utils import *
 from imagenet_utils import *
+from dbscan import dbscan_filter
 import pickle
 import matplotlib.pyplot as plt
 from scipy.spatial import ConvexHull
 import numpy as np
 from tqdm import tqdm
+import json
+from scipy.stats import spearmanr
 
 def point_to_line(point, start, end):
     line_vec = end - start
@@ -38,59 +41,82 @@ def point_in_poly(x, y, poly):
         p1x, p1y = p2x, p2y
     return inside
 
-birds_of_prey, filenames = get_concept_encodings(get_label_from_word('bird_of_prey'), 'model/vae2', 'train', stacked=False, reduced=True, include_filenames=True)
+def get_dists(points, original, hull):
+    point_dist = []
+    for enc in points:
+        dist_list = []
+        for v_idx in range(len(hull.vertices)):
+            v1 = hull.vertices[v_idx - 1]
+            v2 = hull.vertices[v_idx]
+            start = original[v1]
+            end = original[v2]
+            temp = point_to_line(enc, start, end)
+            dist_list.append(temp[0])
+        inside = point_in_poly(enc[0], enc[1], original[hull.vertices])
+        if inside == True:
+            dist_temp = -1. * min(dist_list)
+        else:
+            dist_temp = min(dist_list)
+        point_dist.append(dist_temp)
+    return np.array(point_dist)
+
+birds_of_prey_dict, filenames_dict = get_concept_encodings(get_label_from_word('bird_of_prey'), 'model/vae2', 'train', stacked=False, include_filenames=True)
+birds_of_prey_64_dict = get_concept_encodings(get_label_from_word('bird_of_prey'), 'model/vae64', 'train', stacked=False)
 owl_label = get_label_from_word('great_grey_owl')
-owl_encodings = birds_of_prey[owl_label]
-owl_filenames = filenames[owl_label]
-birds_of_prey_encodings = np.concatenate(list(birds_of_prey.values()), axis=0)
-birds_of_prey_filenames = np.concatenate(list(filenames.values()), axis=0)
-
-with open('model/vae64/hulls_2d.p', 'rb') as f:
-    hulls = pickle.load(f)
-owl_hull = hulls[owl_label]
-with open('model/vae64/normals_2d.p', 'rb') as f:
-    normals = pickle.load(f)
-owl_normal = normals[owl_label]
-owl_boundary = ConvexHull(owl_encodings)
-
-point_dist = []
-for enc in birds_of_prey_encodings:
-    dist_list = []
-    for v_idx in range(len(owl_boundary.vertices)):
-        v1 = owl_boundary.vertices[v_idx - 1]
-        v2 = owl_boundary.vertices[v_idx]
-        start = owl_encodings[v1]
-        end = owl_encodings[v2]
-        temp = point_to_line(enc, start, end)
-        dist_list.append(temp[0])
-    inside = point_in_poly(enc[0], enc[1], owl_encodings[owl_boundary.vertices])
-    if inside == True:
-        dist_temp = -1. * min(dist_list)
+other_encodings = np.zeros((3600, 2))
+other_encodings_64 = np.zeros((3600, 64))
+other_filenames = []
+i = 0
+for label in birds_of_prey_dict.keys():
+    if label == owl_label:
+        owl_encodings = birds_of_prey_dict[label]
+        owl_encodings_64 = birds_of_prey_64_dict[label]
+        owl_filenames = [s.decode('utf-8') for s in filenames_dict[label]]
     else:
-        dist_temp = min(dist_list)
-    point_dist.append(dist_temp)
+        other_encodings[1200*i:1200*(i+1)] = birds_of_prey_dict[label]
+        other_encodings_64[1200*i:1200*(i+1)] = birds_of_prey_64_dict[label]
+        other_filenames += [s.decode('utf-8') for s in filenames_dict[label]]
+        i += 1
+owl_encodings_dbscan = dbscan_filter(owl_encodings)
 
-labels = [get_word_from_label(label) for label in birds_of_prey.keys()]
-with open('results/investigation.txt', 'w+') as f:
-    f.write('filename\tlabel\tdist\tp\n')
-    for p_idx in tqdm(range(len(birds_of_prey_encodings))):
-        pt = birds_of_prey_encodings[p_idx, :]
-        filename = birds_of_prey_filenames[p_idx]
-        pt[1] = pt[1] + .01
-        label = labels[p_idx // 1200]
-        dist = point_dist[p_idx]
-        prototypicality = owl_normal.pdf(pt)
-        f.write('{0}\n'.format('\t'.join([str(i) for i in [filename.decode('utf-8'), label, dist, prototypicality]])))
+with open('model/vae2/normals.p', 'rb') as f:
+    normals = pickle.load(f)
+with open('model/vae64/normals.p', 'rb') as f:
+    normals_64 = pickle.load(f)
+owl_normal = normals[owl_label]
+owl_normal_64 = normals_64[owl_label]
 
-'''plt.figure(figsize=(12,10))
-plt.plot(owl_encodings[:, 0], owl_encodings[:, 1], 'k.', markersize=2, alpha=.5)
-for simplex in owl_boundary.simplices:
-    plt.plot(owl_encodings[simplex, 0], owl_encodings[simplex, 1], 'k-')
-plt.plot(birds_of_prey_encodings[:, 0], birds_of_prey_encodings[:, 1], 'r.', markersize=2)
-for p_idx in range(len(birds_of_prey_encodings)):
-    pt = birds_of_prey_encodings[p_idx, :]
-    pt[1] = pt[1] + .01
-    dist = point_dist[p_idx]
-    dist_label = '{0:.2f}'.format(dist)
-    plt.annotate(dist_label, xy=pt)
-plt.show()'''
+owl_hull = ConvexHull(owl_encodings)
+owl_hull_dbscan = ConvexHull(owl_encodings_dbscan)
+
+owl_dists = get_dists(owl_encodings, owl_encodings, owl_hull)
+owl_dists_dbscan = get_dists(owl_encodings, owl_encodings_dbscan, owl_hull_dbscan)
+other_dists = get_dists(other_encodings, owl_encodings, owl_hull)
+other_dists_dbscan = get_dists(other_encodings, owl_encodings_dbscan, owl_hull_dbscan)
+
+owl_results = {}
+for i, (filename, enc, enc64, dist, dist_dbscan) in enumerate(list(zip(owl_filenames, owl_encodings, owl_encodings_64, owl_dists, owl_dists_dbscan))):
+    p2 = owl_normal.pdf(enc) / owl_normal.pdf(owl_normal.mean)
+    p64 = owl_normal_64.pdf(enc64) / owl_normal_64.pdf(owl_normal_64.mean)
+    owl_results[filename] = {'enc': enc.astype(float).tolist(), 'dist': float(dist), 'dist_dbscan': float(dist_dbscan), 'p2': float(p2), 'p64': float(p64)}
+
+other_results = {}
+for i, (filename, enc, enc64, dist, dist_dbscan) in enumerate(list(zip(other_filenames, other_encodings, other_encodings_64, other_dists, other_dists_dbscan))):
+    p2 = owl_normal.pdf(enc) / owl_normal.pdf(owl_normal.mean)
+    p64 = owl_normal_64.pdf(enc64) / owl_normal_64.pdf(owl_normal_64.mean)
+    other_results[filename] = {'enc': enc.astype(float).tolist(), 'dist': float(dist), 'dist_dbscan': float(dist_dbscan), 'p2': float(p2), 'p64': float(p64)}
+
+with open('results/qualitative/owls.json', 'w+') as f:
+    f.write(json.dumps(owl_results, indent=4))
+with open('results/qualitative/owls.txt', 'w+') as f:
+    f.write('filename\tdist\tdist_dbscan\tp2\tp64\n')
+    for filename, res in owl_results.items():
+        del res['enc']
+        f.write('{0}\t{1}\n'.format(filename, '\t'.join([str(i) for i in res.values()])))
+with open('results/qualitative/other.json', 'w+') as f:
+    f.write(json.dumps(other_results, indent=4))
+with open('results/qualitative/other.txt', 'w+') as f:
+    f.write('filename\tdist\tdist_dbscan\tp2\tp64\n')
+    for filename, res in other_results.items():
+        del res['enc']
+        f.write('{0}\t{1}\n'.format(filename, '\t'.join([str(i) for i in res.values()])))
