@@ -60,9 +60,10 @@ def get_concept_embeddings(concept):
             idx += n
     return train, dev, train_labels, dev_labels
 
-def get_concept_encodings(concept, model_path, encodings_type, stacked=True, reduced=False):
+def get_concept_encodings(concept, model_path, encodings_type, stacked=True, reduced=False, include_filenames=False):
     leaves = get_leaves(concept)
     encodings = {}
+    filenames = {}
     path = model_path + '/'
     if encodings_type == 'train':
         indices = train_indices
@@ -77,13 +78,21 @@ def get_concept_encodings(concept, model_path, encodings_type, stacked=True, red
         path += '_2d'
     path += '.hdf5'
     with h5py.File(path) as f:
-        for concept in leaves:
-            i, k = indices[concept]
-            encodings[concept] = f['encodings'][i:i+k]
+        with h5py.File(encodings_type + '.hdf5') as g:
+            for concept in leaves:
+                i, k = indices[concept]
+                encodings[concept] = f['encodings'][i:i+k]
+                filenames[concept] = g['filenames'][i:i+k]
     if stacked:
-        return np.concatenate(list(encodings.values()))
+        if include_filenames:
+            return np.concatenate(list(encodings.values())), np.concatenate(list(filenames.values()))
+        else:
+            return np.concatenate(list(encodings.values()))
     else:
-        return encodings
+        if include_filenames:
+            return encodings, filenames
+        else:
+            return encodings
 
 def get_exclusive_encodings(concepts, model_path, reduced=False):
     leaf_concepts = defaultdict(list)
