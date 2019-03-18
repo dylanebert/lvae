@@ -76,15 +76,19 @@ def wbless(vals):
     acc = (tp + tn) / float(tp + tn + fp + fn)
     print('\t'.join([str(i) for i in [tau, acc, precision, recall, f1]]))
 
-def hyperlex(values):
+def hyperlex(values, strict=False):
     print('Spearmanr', 'MAE', 'RMSE')
     y_true = []
     y_pred = []
     y_pred_test = []
     for key, val in vals.items():
         y_true.append(val[0])
-        y_pred.append(val[1])
-        y_pred_test.append(val[2])
+        if strict:
+            y_pred.append(int(val[1]))
+            y_pred_test.append(int(val[2]))
+        else:
+            y_pred.append(val[1])
+            y_pred_test.append(val[2])
     print(spearmanr(y_true, y_pred_test).correlation, mean_absolute_error(y_true, y_pred_test), math.sqrt(mean_squared_error(y_true, y_pred_test)))
 
 def categorization_discrete(y_true, y_pred):
@@ -140,6 +144,7 @@ if __name__ == '__main__':
     parser.add_argument('--method', help='classical or prototype', type=str, required=True)
     parser.add_argument('--dset', help='wbless or hyperlex or categorization', type=str, required=True)
     parser.add_argument('--reduced', action='store_true')
+    parser.add_argument('--strict', action='store_true')
     args = parser.parse_args()
 
     path = 'results/' + str(args.latent_size) + '/' + args.dset + '/' + args.method
@@ -156,4 +161,4 @@ if __name__ == '__main__':
         if args.dset == 'wbless':
             wbless(vals)
         elif args.dset == 'hyperlex':
-            hyperlex(vals)
+            hyperlex(vals, strict=args.strict)
