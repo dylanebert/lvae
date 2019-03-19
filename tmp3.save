@@ -1,6 +1,0 @@
-#!/bin/bash
-python utils/compute_classical.py --latent_size $1
-python utils/prototype.py --input model/vae$1/normals.p --output results/$1/wbless/PROTOTYPE.txt --encodings_path model/vae$1/encodings.hdf5 --dset wbless
-python utils/prototype.py --input model/vae$1/normals.p --output results/$1/wbless/PROTOTYPE_TEST.txt --encodings_path model/vae$1/test_encodings.hdf5 --dset wbless --test
-python utils/eval.py results/$1/wbless/PROTOTYPE.txt results/$1/wbless/PROTOTYPE_TEST.txt | column -t
-
