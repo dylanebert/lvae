@@ -23,9 +23,13 @@ def extract_csv(word, model):
     write_csv_with_labels(encodings, label_indices, model + '/csv/' + word)
 
 def subsample(input, output, k):
-    data = read_csv(input)
-    sample = random.sample(list(data), k)
-    write_csv(sample, output)
+    lines = []
+    with open(input) as f:
+        for line in f:
+            lines.append(line.rstrip())
+    sample = random.sample(lines, k)
+    with open(output, 'w+') as f:
+        f.write('\n'.join(sample))
 
 def read_csv(path):
     data = []
@@ -65,4 +69,6 @@ def read_clusters(path):
     return clusters
 
 if __name__ == '__main__':
-    extract_csv('bird_of_prey', 'model/vae3')
+    #extract_csv('bird_of_prey', 'model/vae3')
+    #extract_csv('entity', 'model/vae2')
+    subsample('model/vae2/csv/entity', 'model/vae2/csv/entity_sample', 10000)

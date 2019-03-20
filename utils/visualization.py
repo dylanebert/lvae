@@ -27,8 +27,6 @@ class Visualization():
         plt.scatter(enc[:,0], enc[:,1], alpha=.5, c=colors)
         plt.xticks(alpha=.5)
         plt.yticks(alpha=.5)
-        plt.xlim([-5, 5])
-        plt.ylim([-5, 5])
         plt.show()
         plt.clf()
 
@@ -47,16 +45,15 @@ class Visualization():
         plt.scatter(enc[:,0], enc[:,1], alpha=.5, c=colors)
         plt.xticks(alpha=.5)
         plt.yticks(alpha=.5)
-        plt.xlim([-5, 5])
-        plt.ylim([-5, 5])
         plt.show()
         plt.clf()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', '--model_path', type=str, default='model/vae64')
+    parser.add_argument('-a', type=str, default='bird_of_prey')
     args = parser.parse_args()
 
     vis = Visualization(args.model_path)
-    vis.show_encodings('bird_of_prey')
-    vis.show_clusters('bird_of_prey')
+    vis.show_encodings(args.a)
+    vis.show_clusters(args.a)
