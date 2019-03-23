@@ -15,12 +15,18 @@ def csv_to_hdf5(input, output):
     with h5py.File(input, 'w') as f:
         f.create_dataset('encodings', data=data)
 
-def extract_csv(word, model):
-    encodings, filenames = get_concept_encodings(get_label_from_word(word), model, 'train', include_filenames=True)
+def extract_csv(label, model, subsample=True):
+    encodings, filenames = get_concept_encodings(label, model, 'train', include_filenames=True)
+    if len(encodings) > 10000:
+        indices = list(np.arange(len(encodings)))
+        sample = random.sample(indices, 10000)
+        encodings, filenames = encodings[sample], filenames[sample]
     labels = [os.path.split(filename)[0].decode('utf-8') for filename in filenames]
     unique_labels = list(set(labels))
     label_indices = [unique_labels.index(label) for label in labels]
-    write_csv_with_labels(encodings, label_indices, model + '/csv/' + word)
+    write_csv_with_labels(encodings, label_indices, model + '/csv/' + label)
+    with open(model + '/csv/' + label + '_filenames', 'w+') as f:
+        f.write('\n'.join([s.decode('utf-8') for s in filenames]))
 
 def subsample(input, output, k):
     lines = []
@@ -52,12 +58,12 @@ def read_csv_with_labels(path):
 
 def write_csv(data, path):
     with open(path, 'w+') as f:
-        for enc in tqdm(data, total=len(data)):
+        for enc in data:
             f.write(','.join([str(i) for i in enc]) + '\n')
 
 def write_csv_with_labels(data, labels, path):
     with open(path, 'w+') as f:
-        for enc, label in tqdm(zip(data, labels), total=len(data)):
+        for enc, label in zip(data, labels):
             f.write(','.join([str(i) for i in enc] + [str(label)]) + '\n')
 
 def read_clusters(path):
@@ -69,6 +75,8 @@ def read_clusters(path):
     return clusters
 
 if __name__ == '__main__':
-    #extract_csv('bird_of_prey', 'model/vae3')
-    #extract_csv('entity', 'model/vae2')
-    subsample('model/vae2/csv/entity', 'model/vae2/csv/entity_sample', 10000)
+    labels = get_all_labels()
+    for label in labels:
+        print(label)
+    #for label in tqdm(labels, total=len(labels)):
+        #extract_csv(label, 'model/vae64')

@@ -14,6 +14,16 @@ with open('/home/dylan/Documents/lvae/dev_indices.p', 'rb') as f:
 with open('/home/dylan/Documents/lvae/test_indices.p', 'rb') as f:
     test_indices = pickle.load(f)
 
+def get_all_labels():
+    labels = []
+    with open('/data/nlp/bless/wbless_imagenet_labels.txt') as f:
+        labels += f.read().splitlines()
+    with open('/data/nlp/hyperlex/hyperlex_imagenet_labels.txt') as f:
+        labels += f.read().splitlines()
+    labels += list(train_indices.keys())
+    labels = list(set(labels))
+    return labels
+
 def get_leaves(label):
     leaves = []
     labels = [label]
