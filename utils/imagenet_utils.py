@@ -24,6 +24,9 @@ def get_all_labels():
     labels = list(set(labels))
     return labels
 
+def get_label_from_filename(filename):
+    return os.path.split(filename)[0]
+
 def get_leaves(label):
     leaves = []
     labels = [label]
@@ -95,7 +98,7 @@ def get_concept_encodings(concept, model_path, encodings_type, stacked=True, red
                 filenames[concept] = g['filenames'][i:i+k]
     if stacked:
         if include_filenames:
-            return np.concatenate(list(encodings.values())), np.concatenate(list(filenames.values()))
+            return np.concatenate(list(encodings.values())), [s.decode('utf-8') for s in np.concatenate(list(filenames.values()))]
         else:
             return np.concatenate(list(encodings.values()))
     else:

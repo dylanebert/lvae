@@ -41,14 +41,7 @@ if __name__ == '__main__':
     parser.add_argument('--dbscan', action='store_true')
     args = parser.parse_args()
 
-    labels = []
-    with open('/data/nlp/bless/wbless_imagenet_labels.txt') as f:
-        labels += f.read().splitlines()
-    with open('/data/nlp/hyperlex/hyperlex_imagenet_labels.txt') as f:
-        labels += f.read().splitlines()
-    labels += list(train_indices.keys())
-    labels = list(set(labels))
-
+    labels = get_all_labels()
     model_path = 'model/vae' + str(args.latent_size)
     compute_normals(model_path, labels, args.dbscan, args.reduced)
     compute_prototypes(model_path, labels, args.dbscan, args.reduced, 'dev')
