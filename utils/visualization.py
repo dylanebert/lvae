@@ -70,7 +70,7 @@ class Visualization():
         if a_encodings.shape[1] > 2:
             encodings = PCA(n_components=2).fit_transform(encodings)
         else:
-            a_bounds, b_bounds = Bounds(self.model, a), Bounds(self.model, b)
+            a_bounds, b_bounds = Bounds(self.model, a, include_outliers=True), Bounds(self.model, b, include_outliers=True)
             a_r, b_r = a_bounds.radius, b_bounds.radius
             X, Y = np.mgrid[-2.5:2.5:.01, -2.5:2.5:.01]
             pos = np.vstack([X.ravel(), Y.ravel()])
@@ -104,6 +104,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     vis = Visualization(args.model_path)
-    vis.show_encodings(get_label_from_word('bird_of_prey'))
-    vis.show_encodings(get_label_from_word('great_gray_owl'))
-    #vis.show_entailment(get_label_from_word('great_gray_owl'), get_label_from_word('bird_of_prey'))
+    #vis.show_encodings(get_label_from_word('bird_of_prey'))
+    #vis.show_encodings(get_label_from_word('great_gray_owl'))
+    vis.show_entailment(get_label_from_word('great_gray_owl'), get_label_from_word('bird_of_prey'))

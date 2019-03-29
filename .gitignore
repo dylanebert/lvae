@@ -1,5 +1,3 @@
 model/*
-train.hdf5
-dev.hdf5
-test.hdf5
-
+data/*
+backup/*

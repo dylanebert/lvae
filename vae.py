@@ -19,10 +19,10 @@ sys.path.append('utils')
 from imagenet_utils import *
 
 class VAE():
-    def __init__(self, model_path, latent_size=2):
-        self.model_path = model_path
-        if not os.path.exists(self.model_path):
-            os.makedirs(self.model_path)
+    def __init__(self, model, latent_size=2):
+        self.model = model
+        if not os.path.exists(self.model):
+            os.makedirs(self.model)
 
         input_size = 2048
         h1_size = min(latent_size * 4, input_size)
@@ -70,7 +70,7 @@ class VAE():
 
     def load_weights(self):
         try:
-            self.vae.load_weights(os.path.join(self.model_path, 'weights.h5'))
+            self.vae.load_weights(os.path.join(self.model, 'weights.h5'))
             print('Weights loaded')
             return True
         except:
@@ -79,13 +79,13 @@ class VAE():
 
     def train(self):
         self.load_weights()
-        train_data = HDF5Matrix('train.hdf5', 'embeddings')
-        dev_data = HDF5Matrix('dev.hdf5', 'embeddings')
-        checkpoint_callback = keras.callbacks.ModelCheckpoint(os.path.join(self.model_path, 'weights.h5'), save_best_only=True, verbose=1)
+        train_data = HDF5Matrix('train.h5', 'embeddings')
+        dev_data = HDF5Matrix('dev.h5', 'embeddings')
+        checkpoint_callback = keras.callbacks.ModelCheckpoint(os.path.join(self.model, 'weights.h5'), save_best_only=True, verbose=1)
         earlystopping_callback = keras.callbacks.EarlyStopping(verbose=1, patience=5)
         callbacks = [checkpoint_callback, earlystopping_callback]
         history = self.vae.fit(x=train_data, y=None, validation_data=(dev_data, None), epochs=999, shuffle='batch', callbacks=callbacks, batch_size=64, verbose=1)
-        with open(os.path.join(self.model_path, 'history.p'), 'wb+') as o:
+        with open(os.path.join(self.model, 'history.p'), 'wb+') as o:
             pickle.dump(history.history, o)
 
     def encode(self, encode):
@@ -93,13 +93,13 @@ class VAE():
             return
         if encode == 'train':
             dpath = 'train.hdf5'
-            spath = os.path.join(self.model_path, 'encodings.hdf5')
+            spath = os.path.join(self.model, 'encodings.hdf5')
         elif encode == 'dev':
             dpath = 'dev.hdf5'
-            spath = os.path.join(self.model_path, 'dev_encodings.hdf5')
+            spath = os.path.join(self.model, 'dev_encodings.hdf5')
         elif encode == 'test':
             dpath = 'test.hdf5'
-            spath = os.path.join(self.model_path, 'test_encodings.hdf5')
+            spath = os.path.join(self.model, 'test_encodings.hdf5')
         else:
             sys.exit('Invalid encode type. Use train/dev/test')
         data = HDF5Matrix(dpath, 'embeddings')
@@ -109,13 +109,13 @@ class VAE():
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('-m', '--model_path', help='model directory path', type=str, required=True)
+    parser.add_argument('-m', '--model', help='model directory path', type=str, required=True)
     parser.add_argument('--train', action='store_true')
     parser.add_argument('--encode', help='encode train/dev/test', type=str, default='')
     parser.add_argument('--latent_size', help='override latent size', type=int, default=2)
     args = parser.parse_args()
 
-    model = VAE(args.model_path, latent_size=args.latent_size)
+    model = VAE(args.model, latent_size=args.latent_size)
     if args.train:
         model.train()
     if not args.encode == '':
