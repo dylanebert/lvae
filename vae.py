@@ -15,16 +15,18 @@ import time
 import pickle
 import random
 import sys
-sys.path.append('utils')
-from imagenet_utils import *
 
 class VAE():
-    def __init__(self, model, latent_size=2):
+    def __init__(self, model, data, input_size, latent_size):
         self.model = model
-        if not os.path.exists(self.model):
-            os.makedirs(self.model)
+        self.data = data
+        for s in [model, data]:
+            if not os.path.exists(s):
+                os.makedirs(s)
 
-        input_size = 2048
+        if input_size < latent_size * 4:
+            print('Warning: First layer larger than input size')
+
         h1_size = min(latent_size * 4, input_size)
         h2_size = min(latent_size * 2, input_size)
 
@@ -79,8 +81,8 @@ class VAE():
 
     def train(self):
         self.load_weights()
-        train_data = HDF5Matrix('train.h5', 'embeddings')
-        dev_data = HDF5Matrix('dev.h5', 'embeddings')
+        train_data = HDF5Matrix(os.path.join(self.data, 'train.h5'), 'embeddings')
+        dev_data = HDF5Matrix(os.path.join(self.data, 'dev.h5'), 'embeddings')
         checkpoint_callback = keras.callbacks.ModelCheckpoint(os.path.join(self.model, 'weights.h5'), save_best_only=True, verbose=1)
         earlystopping_callback = keras.callbacks.EarlyStopping(verbose=1, patience=5)
         callbacks = [checkpoint_callback, earlystopping_callback]
@@ -88,35 +90,26 @@ class VAE():
         with open(os.path.join(self.model, 'history.p'), 'wb+') as o:
             pickle.dump(history.history, o)
 
-    def encode(self, encode):
+    def encode(self):
         if not self.load_weights():
             return
-        if encode == 'train':
-            dpath = 'train.hdf5'
-            spath = os.path.join(self.model, 'encodings.hdf5')
-        elif encode == 'dev':
-            dpath = 'dev.hdf5'
-            spath = os.path.join(self.model, 'dev_encodings.hdf5')
-        elif encode == 'test':
-            dpath = 'test.hdf5'
-            spath = os.path.join(self.model, 'test_encodings.hdf5')
-        else:
-            sys.exit('Invalid encode type. Use train/dev/test')
-        data = HDF5Matrix(dpath, 'embeddings')
-        z = self.encoder.predict(data, batch_size=64, verbose=1)
-        with h5py.File(spath, 'w') as f:
-            f.create_dataset('encodings', data=z)
+        for s in ['train', 'dev', 'test']:
+            print('Encoding {0} data'.format(s))
+            dpath = os.path.join(self.data, s + '.h5')
+            spath = os.path.join(self.model, s + '_encodings.h5')
+            data = HDF5Matrix(dpath, 'embeddings')
+            z = self.encoder.predict(data, batch_size=64, verbose=1)
+            with h5py.File(spath, 'w') as f:
+                f.create_dataset('encodings', data=z)
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('-m', '--model', help='model directory path', type=str, required=True)
-    parser.add_argument('--train', action='store_true')
-    parser.add_argument('--encode', help='encode train/dev/test', type=str, default='')
-    parser.add_argument('--latent_size', help='override latent size', type=int, default=2)
+    parser.add_argument('-d', '--data', help='data directory path: {train, dev, test}.h5', type=str, required=True)
+    parser.add_argument('--input_size', help='input embeddings size', type=int, default=2048)
+    parser.add_argument('--latent_size', help='latent encoding size', type=int, default=2)
     args = parser.parse_args()
 
-    model = VAE(args.model, latent_size=args.latent_size)
-    if args.train:
-        model.train()
-    if not args.encode == '':
-        model.encode(args.encode)
+    model = VAE(args.model, args.data, args.input_size, args.latent_size)
+    model.train()
+    model.encode()
