@@ -73,12 +73,7 @@ def build():
     with open('data/combined/missing.txt', 'w+') as f:
         f.write('\n'.join(missing))
 
-def copy():
-    with open('data/combined/mmid.json') as f:
-        mmid = json.loads(f.read())
-    with open('data/combined/imagenet.json') as f:
-        imagenet = json.loads(f.read())
-
+def copy(mmid, imagenet):
     mmid_values = list(set(np.concatenate(list(mmid.values()))))
     imagenet_values = list(set(np.concatenate(list(imagenet.values()))))
 
@@ -101,4 +96,13 @@ def copy():
             dest = os.path.join('/data/nlp/combined', type, value)
             shutil.copytree(source, dest)
 
-copy()
+try:
+    with open('data/combined/mmid.json') as f:
+        mmid = json.loads(f.read())
+    with open('data/combined/imagenet.json') as f:
+        imagenet = json.loads(f.read())
+except:
+    build()
+
+if __name__ == '__main__':
+    copy(mmid, imagenet)
