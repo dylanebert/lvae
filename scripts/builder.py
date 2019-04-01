@@ -29,49 +29,36 @@ def build():
         word = wordnet.synset_from_pos_and_offset(s[0], int(s[1:])).lemmas()[0].name().replace('_', ' ')
         imagenet_labels[word] = s
 
-    def hypernym_closure(word):
-        closure = [word]
-        synsets = wordnet.synsets(word)
+    def hyponym_closure(label):
+        closure = [label]
+        synsets = wordnet.synsets(label)
         if len(synsets) == 0:
             return closure
         def f(x):
             try:
-                return x.hypernyms()[0]
+                return x.hyponyms()
             except:
                 return []
-        for hypernym in synsets[0].closure(f):
-            closure.append(hypernym.lemmas()[0].name().replace('_', ' '))
+        primary_sense = synsets[0]
+        for hyponym in primary_sense.closure(f):
+            for lemma in hyponym.lemmas():
+                closure.append(lemma.name().replace('_', ' '))
         return list(set(closure))
-
-    mmid_hypernyms = {}
-    imagenet_hypernyms = {}
-    for label in mmid_labels:
-        mmid_hypernyms[label] = hypernym_closure(label)
-    for label in imagenet_labels:
-        imagenet_hypernyms[label] = hypernym_closure(label)
 
     mmid_dict = defaultdict(list)
     imagenet_dict = defaultdict(list)
-    missing = []
     for label in tqdm(eval_labels, total=len(eval_labels)):
-        present = False
-        for s in mmid_labels:
-            if label in mmid_hypernyms[s]:
-                mmid_dict[label].append(mmid_labels[s])
-                present = True
-        for s in imagenet_labels:
-            if label in imagenet_hypernyms[s]:
-                imagenet_dict[label].append(imagenet_labels[s])
-                present = True
-        if not present:
-            missing.append(label)
+        hyponyms = hyponym_closure(label)
+        for hyponym in hyponyms:
+            if hyponym in mmid_labels:
+                mmid_dict[label].append(mmid_labels[hyponym])
+            if hyponym in imagenet_labels:
+                imagenet_dict[label].append(imagenet_labels[hyponym])
 
     with open('data/combined/mmid.json', 'w+') as f:
         f.write(json.dumps(mmid_dict))
     with open('data/combined/imagenet.json', 'w+') as f:
         f.write(json.dumps(imagenet_dict))
-    with open('data/combined/missing.txt', 'w+') as f:
-        f.write('\n'.join(missing))
 
 def copy(mmid, imagenet):
     mmid_values = list(set(np.concatenate(list(mmid.values()))))
