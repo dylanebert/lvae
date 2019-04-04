@@ -14,7 +14,7 @@ def cnn(input, output, image_size):
     model = Model(inputs=inception.input, outputs=inception.layers[-2].output)
     batch_size = 100
     datagen = ImageDataGenerator(rescale=1/255.)
-    gen = datagen.flow_from_directory(input, target_size=(image_size, image_size), batch_size=100, shuffle=False)
+    gen = datagen.flow_from_directory(input, target_size=(image_size, image_size), batch_size=100, shuffle=False, follow_links=True)
     n = len(gen)
     classes = {v: k for k, v in gen.class_indices.items()}
     labels = [classes[k] for k in gen.classes]

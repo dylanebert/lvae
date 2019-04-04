@@ -7,14 +7,15 @@ from PIL import ImageTk, Image
 import os
 import numpy as np
 
-#Get the 100 most concrete eval labels
-edf = pd.DataFrame(data=eval_labels)
-cdf = pd.read_csv('/data/nlp/concreteness.txt', sep='\t', index_col=False)
-cdf = cdf.sort_values(by='Conc.M', ascending=False)[cdf['Word'].isin(edf[0])]
-labels = cdf.iloc[:100]['Word'].values
+labels = eval_labels
+i = 0
 
 def validate(label, path, value):
-    print(label, path, value)
+    with open('data/combined/validation.txt', 'a+') as f:
+        f.write('\t'.join([label, path, str(value)]) + '\n')
+    global i
+    i += 1
+    print(i)
     next()
 
 def next():
@@ -33,8 +34,7 @@ def next():
         files = os.listdir(os.path.join('/data/nlp/imagenet/train', dir))
         filepath = os.path.join('/data/nlp/imagenet/train', dir, random.choice(files))
     else:
-        dir = dir.replace('index', 'scale')
-        files = os.listdir(os.path.join('/data/nlp/mmid', dir))
+        files = [file for file in os.listdir(os.path.join('/data/nlp/mmid', dir)) if file.endswith('.jpg')]
         filepath = os.path.join('/data/nlp/mmid', dir, random.choice(files))
     img = ImageTk.PhotoImage(Image.open(filepath))
     panel = tk.Label(root, image=img)

@@ -7,8 +7,8 @@ from tqdm import tqdm
 from collections import defaultdict
 import json
 import numpy as np
-import shutil
 import random
+import shutil
 
 def build():
     mmid_labels = {}
@@ -20,7 +20,7 @@ def build():
                 label, index = str(label), int(index)
             except:
                 pass
-            mmid_labels[label] = os.path.join(s.replace('.tsv', ''), str(index))
+            mmid_labels[label] = os.path.join(s.replace('.tsv', '').replace('index', 'scale'), str(index))
 
     imagenet_labels = {}
     with open('/data/nlp/imagenet/synsets.txt') as f:
@@ -65,6 +65,7 @@ def copy(mmid, imagenet):
     imagenet_values = list(set(np.concatenate(list(imagenet.values()))))
 
     for value in tqdm(mmid_values, total=len(mmid_values)):
+        continue
         source = os.path.join('/data/nlp/mmid', value.replace('index', 'scale'))
         files = [file for file in os.listdir(source) if file.endswith('.jpg')]
         random.shuffle(files)
@@ -81,7 +82,7 @@ def copy(mmid, imagenet):
         for type in ['train', 'dev', 'test']:
             source = os.path.join('/data/nlp/imagenet', type, value)
             dest = os.path.join('/data/nlp/combined', type, value)
-            shutil.copytree(source, dest)
+            os.symlink(source, dest)
 
 try:
     with open('data/combined/mmid.json') as f:
