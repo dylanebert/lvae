@@ -5,6 +5,8 @@ import seaborn as sns
 import numpy as np
 import pandas as pd
 import sys
+from PIL import Image
+import os
 
 def plot_encodings(encodings):
     fig = plt.figure()
@@ -30,7 +32,10 @@ def plot_clusters(encodings, clusters, filenames):
 
     def onpick(event):
         ind = event.ind[0]
-        img = Image.open(os.path.join('/data/nlp/imagenet/train', filenames[ind]))
+        if filenames[ind][0] == 'n':
+            img = Image.open(os.path.join('/data/nlp/imagenet/train', filenames[ind]))
+        else:
+            img = Image.open(os.path.join('/data/nlp/mmid', filenames[ind].replace('_', '/')))
         img.show()
     fig.canvas.mpl_connect('pick_event', onpick)
 
@@ -39,5 +44,5 @@ def plot_clusters(encodings, clusters, filenames):
 word = sys.argv[1]
 encodings = np.array(pd.read_csv('model/combined/csv/train_encodings/' + word, header=None).values, dtype=float)
 clusters = np.squeeze(np.array(pd.read_csv('model/combined/csv/train_clusters/' + word, header=None).values, dtype=int))
-filenames = np.array(pd.read_csv('model/combined/csv/train_filenames/' + word, header=None).values)
+filenames = np.squeeze(np.array(pd.read_csv('model/combined/csv/train_filenames/' + word, header=None).values))
 plot_clusters(encodings, clusters, filenames)

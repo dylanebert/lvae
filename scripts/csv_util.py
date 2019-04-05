@@ -7,58 +7,37 @@ import numpy as np
 from tqdm import tqdm
 import random
 
-def extract():
-    with h5py.File('model/combined/train_encodings.h5') as f:
+def get_df(type):
+    with h5py.File('model/combined/' + type + '_encodings.h5') as f:
         encodings = np.array(f['encodings'])
-    with h5py.File('data/combined/train.h5') as f:
-        labels = np.array(f['labels'])
-        filenames = np.array(f['filenames'])
-    label_set = [s.decode('utf-8') for s in list(set(labels))]
+    with h5py.File('data/combined/' + type + '.h5') as f:
+        labels = np.array(f['labels']).astype(str).tolist()
+        filenames = np.array(f['filenames']).astype(str).tolist()
+    encoding_columns = [np.squeeze(x) for x in np.hsplit(encodings, encodings.shape[1])]
+    data = {}
+    for i, v in enumerate(encoding_columns):
+        data[str(i)] = v
+    data['label'] = labels
+    data['filename'] = filenames
+    return pd.DataFrame(data=data)
 
-    indices = {}
-    idx = 0
-    n = 0
-    c = None
-    for i, l in tqdm(enumerate(labels), total=len(labels)):
-        l = l.decode('utf-8')
-        if not l == c:
-            if n > 0:
-                indices[l] = (idx, idx + n)
-                n = 0
-            idx = i
-            c = l
-        n += 1
-    indices[l] = (idx, idx + n)
-
+def extract(type):
+    df = get_df(type)
     for label in tqdm(eval_labels, total=len(eval_labels)):
         s = []
         if label in mmid:
             s += mmid[label]
         if label in imagenet:
             s += imagenet[label]
-        enc = []
-        fnames = []
-        label_indices = []
-        for l in s:
-            l = l.replace('/', '_')
-            if l not in indices:
-                continue
-            i, j = indices[l]
-            enc += list(encodings[i:j])
-            fnames += list(filenames[i:j])
-            label_indices += [label_set.index(l)] * (j - i)
-        if len(enc) > 10000:
-            idx = np.array(random.sample(range(len(enc)), 10000))
-            enc = np.array(enc)[idx].tolist()
-            fnames = np.array(fnames)[idx].tolist()
-            label_indices = np.array(label_indices)[idx].tolist()
-        with open(os.path.join('model/combined/csv/train_encodings', label), 'w+') as f:
-            for i in range(len(enc)):
-                e = enc[i]
-                li = label_indices[i]
-                f.write(','.join([str(j) for j in e]) + ',' + str(li) + '\n')
-        with open(os.path.join('model/combined/csv/train_filenames', label), 'w+') as f:
-            f.write('\n'.join([j.decode('utf-8') for j in fnames]))
+        s = [i.replace('/', '_') for i in s]
+        entries = df[df['label'].isin(s)]
+        temp = list(set(entries['label'].values))
+        label_to_val = {label: temp.index(label) for label in temp}
+        entries['label'].replace(label_to_val, inplace=True)
+        if len(entries) > 10000:
+            entries = entries.sample(10000)
+        entries.to_csv('model/combined/csv/' + type + '_encodings/' + label, columns=['0', '1', 'label'], index=False, header=None)
+        entries.to_csv('model/combined/csv/' + type + '_filenames/' + label, columns=['filename'], index=False, header=None)
 
 if __name__ == '__main__':
-    extract()
+    extract('train')
