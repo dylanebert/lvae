@@ -15,12 +15,16 @@ import time
 import pickle
 import random
 import sys
+sys.path.append('scripts')
+from config import config
 
 class VAE():
-    def __init__(self, model, data, input_size, latent_size):
-        self.model = model
-        self.data = data
-        for s in [model, data]:
+    def __init__(self, config):
+        input_size = 2048
+        latent_size = config.latent_size
+        self.model = config.model
+        self.data = config.data
+        for s in [self.model, self.data]:
             if not os.path.exists(s):
                 os.makedirs(s)
 
@@ -103,13 +107,6 @@ class VAE():
                 f.create_dataset('encodings', data=z)
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser()
-    parser.add_argument('-m', '--model', help='model directory path', type=str, required=True)
-    parser.add_argument('-d', '--data', help='data directory path: {train, dev, test}.h5', type=str, required=True)
-    parser.add_argument('--input_size', help='input embeddings size', type=int, default=2048)
-    parser.add_argument('--latent_size', help='latent encoding size', type=int, default=2)
-    args = parser.parse_args()
-
-    model = VAE(args.model, args.data, args.input_size, args.latent_size)
+    model = VAE(config)
     model.train()
     model.encode()
