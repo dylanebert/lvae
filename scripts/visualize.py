@@ -9,13 +9,20 @@ from PIL import Image
 import os
 from config import config
 
-def plot_encodings(encodings):
+def plot_encodings(encodings, filenames):
     fig = plt.figure()
     plt.box(on=None)
     plt.grid(alpha=.5, linestyle='-', linewidth=1)
-    plt.scatter(encodings[:,0], encodings[:,1], s=5)
-    plt.xlim([-4, 4])
-    plt.ylim([-4, 4])
+    plt.scatter(encodings[:,0], encodings[:,1], s=5, picker=5)
+    #plt.xlim([-4, 4])
+    #plt.ylim([-4, 4])
+
+    def onpick(event):
+        ind = event.ind[0]
+        img = Image.open(os.path.join('/data/nlp/birds', 'train', filenames[ind]))
+        img.show()
+    fig.canvas.mpl_connect('pick_event', onpick)
+
     plt.show()
 
 def plot_clusters(encodings, clusters, filenames):
@@ -46,6 +53,7 @@ def plot_clusters(encodings, clusters, filenames):
 
 word = sys.argv[1]
 encodings = np.array(pd.read_csv(config.model + '/csv/train_encodings/' + word, header=None).values, dtype=float)
-clusters = np.squeeze(np.array(pd.read_csv(config.model + '/csv/train_clusters/' + word, header=None).values, dtype=int))
+#clusters = np.squeeze(np.array(pd.read_csv(config.model + '/csv/train_clusters/' + word, header=None).values, dtype=int))
 filenames = np.squeeze(np.array(pd.read_csv(config.model + '/csv/train_filenames/' + word, header=None).values))
-plot_clusters(encodings, clusters, filenames)
+#plot_clusters(encodings, clusters, filenames)
+plot_encodings(encodings, filenames)

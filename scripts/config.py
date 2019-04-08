@@ -26,7 +26,7 @@ if __name__ == '__main__':
     config = Config(args.model, args.data, args.latent_size)
     config.save(args.path)
 else:
-    path = 'config/zap50k.json'
+    path = 'config/birds.json'
     config = Config()
     try:
         config.load(path)

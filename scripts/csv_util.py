@@ -48,5 +48,6 @@ if __name__ == '__main__':
             s += imagenet[label]
         s = [i.replace('/', '_') for i in s]
         label_sets[label] = s'''
-    label_sets = {k: [k] for k in ['Boots', 'Sandals', 'Shoes', 'Slippers']}
+    #label_sets = {k: [k] for k in ['Boots', 'Sandals', 'Shoes', 'Slippers']}
+    label_sets = {'0': ['0']}
     extract(label_sets)
