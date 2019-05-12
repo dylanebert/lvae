@@ -1,5 +1,6 @@
 import json
 import argparse
+import os
 
 class Config():
     def __init__(self, model=None, data=None, latent_size=None):
@@ -26,7 +27,7 @@ if __name__ == '__main__':
     config = Config(args.model, args.data, args.latent_size)
     config.save(args.path)
 else:
-    path = 'config/birds.json'
+    path = os.environ['CONFIG']
     config = Config()
     try:
         config.load(path)

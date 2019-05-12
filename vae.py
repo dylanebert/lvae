@@ -20,7 +20,7 @@ from config import config
 
 class VAE():
     def __init__(self, config):
-        input_size = 2048
+        input_size = 1024
         latent_size = config.latent_size
         self.model = config.model
         self.data = config.data
@@ -102,9 +102,13 @@ class VAE():
             dpath = os.path.join(self.data, s + '.h5')
             spath = os.path.join(self.model, s + '_encodings.h5')
             data = HDF5Matrix(dpath, 'embeddings')
+            filenames = HDF5Matrix(dpath, 'filenames')
+            labels = HDF5Matrix(dpath, 'labels')
             z = self.encoder.predict(data, batch_size=64, verbose=1)
             with h5py.File(spath, 'w') as f:
                 f.create_dataset('encodings', data=z)
+                f.create_dataset('filenames', data=filenames)
+                f.create_dataset('labels', data=labels)
 
 if __name__ == '__main__':
     model = VAE(config)
