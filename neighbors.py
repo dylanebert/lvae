@@ -3,15 +3,18 @@ import h5py
 import numpy as np
 import os
 from config import config
+from sklearn.decomposition import PCA
 
-#path = os.path.join(config.model, 'train_encodings.h5')
-path = os.path.join(config.data, 'train.h5')
+path = os.path.join(config.model, 'train_encodings.h5')
 with h5py.File(path) as f:
-    encodings = np.array(f['embeddings'][:10000])
+    try:
+        encodings = np.array(f['encodings'][:10000])
+    except:
+        encodings = np.array(f['embeddings'][:10000])
     filenames = [s.decode('utf-8') for s in f['filenames'][:10000]]
     labels = [s.decode('utf-8') for s in f['labels'][:10000]]
 
-nbrs = NearestNeighbors(n_neighbors=6, metric='cosine').fit(encodings)
+nbrs = NearestNeighbors(n_neighbors=2, metric='euclidean').fit(encodings)
 distances, indices = nbrs.kneighbors(encodings)
 
 n, k = 0, 0

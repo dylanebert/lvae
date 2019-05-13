@@ -15,7 +15,6 @@ import time
 import pickle
 import random
 import sys
-sys.path.append('scripts')
 from config import config
 
 class VAE():
@@ -23,8 +22,8 @@ class VAE():
         input_size = 1024
         latent_size = config.latent_size
         self.model = config.model
-        self.data = config.data
-        for s in [self.model, self.data]:
+        self.embeddings = config.embeddings
+        for s in [self.model, self.embeddings]:
             if not os.path.exists(s):
                 os.makedirs(s)
 
@@ -85,8 +84,8 @@ class VAE():
 
     def train(self):
         self.load_weights()
-        train_data = HDF5Matrix(os.path.join(self.data, 'train.h5'), 'embeddings')
-        dev_data = HDF5Matrix(os.path.join(self.data, 'dev.h5'), 'embeddings')
+        train_data = HDF5Matrix(os.path.join(self.embeddings, 'train.h5'), 'embeddings')
+        dev_data = HDF5Matrix(os.path.join(self.embeddings, 'dev.h5'), 'embeddings')
         checkpoint_callback = keras.callbacks.ModelCheckpoint(os.path.join(self.model, 'weights.h5'), save_best_only=True, verbose=1)
         earlystopping_callback = keras.callbacks.EarlyStopping(verbose=1, patience=5)
         callbacks = [checkpoint_callback, earlystopping_callback]
@@ -99,7 +98,7 @@ class VAE():
             return
         for s in ['train', 'dev', 'test']:
             print('Encoding {0} data'.format(s))
-            dpath = os.path.join(self.data, s + '.h5')
+            dpath = os.path.join(self.embeddings, s + '.h5')
             spath = os.path.join(self.model, s + '_encodings.h5')
             data = HDF5Matrix(dpath, 'embeddings')
             filenames = HDF5Matrix(dpath, 'filenames')
